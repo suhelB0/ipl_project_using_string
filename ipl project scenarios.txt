@@ -1,0 +1,310 @@
+// Find the number of times each team won the toss and also won the match
+    public void getNumberOfTimesWonTossAndWonMatch(){
+        Map<String, Integer> numberOfTimesWonTossAndWonMatch = new HashMap<>();
+        for(Match match : matchesData){
+            String tossWinner = match.getTossWinner();
+            String matchWinner = match.getWinner();
+            if(tossWinner.equals(matchWinner)){
+                numberOfTimesWonTossAndWonMatch.put(tossWinner,
+                        numberOfTimesWonTossAndWonMatch.getOrDefault(tossWinner,0)+1);
+            }
+        }
+        System.out.println(numberOfTimesWonTossAndWonMatch);
+    }
+
+    // Find a player who has won the highest number of player of the match awards for each season
+    public void getYearWiseHighestNumberOfPlayerOfTheMatch(){
+        Map<Integer, Map<String,Integer>> yearWisePlayerOfMatch = new HashMap<>();
+        for(Match match : matchesData) {
+            int season = match.getSeason();
+            String playerOfTheMatch = match.getPlayerOfTheMatch();
+
+            Map<String, Integer> yearPlayer = yearWisePlayerOfMatch.get(season);
+
+            if(yearPlayer == null){
+                yearPlayer = new HashMap<>();
+                yearPlayer.put(playerOfTheMatch,1);
+                yearWisePlayerOfMatch.put(season,yearPlayer);
+            }
+            else{
+                yearPlayer.put(playerOfTheMatch,yearPlayer.getOrDefault(playerOfTheMatch,0)+1);
+            }
+        }
+        Map<Integer, String> yearWiseHighestPlayerOfTheMatch = new HashMap<>();
+        for(Map.Entry<Integer, Map<String,Integer>> mapEntry : yearWisePlayerOfMatch.entrySet()){
+
+            int season = mapEntry.getKey();
+            List<Map.Entry<String, Integer>> highest = new ArrayList<>(mapEntry.getValue().entrySet());
+            highest.sort(((o1, o2) -> { return o2.getValue().compareTo(o1.getValue());}));
+            yearWiseHighestPlayerOfTheMatch.put(season, highest.getFirst().getKey());
+        }
+        System.out.println(yearWiseHighestPlayerOfTheMatch);
+    }
+
+    // Find the strike rate of a batsman for each season
+    public void getStrikeRateOfBatsmanForEachSeason(){
+        Map<Integer,Map<String,Double>> strikeRateOfBatsmanForEachSeason = new HashMap<>();
+        Map<Integer, Integer> seasonIds = new HashMap<>();
+        for(Match match : matchesData){
+            seasonIds.put(match.getId(), match.getSeason());
+        }
+        Map<Integer, Map<String,Integer>> seasonWiseBallCount = new HashMap<>();
+        Map<Integer, Map<String,Integer>> seasonWiseRunCount = new HashMap<>();
+        for(Delivery delivery : deliveriesData){
+            int season = seasonIds.get(delivery.getMatchId());
+            String batsman = delivery.getBatsman();
+            int batsmanRuns = delivery.getBatsmanRuns();
+
+            Map<String, Integer> ballsCount = seasonWiseBallCount.get(season);
+
+            if(ballsCount == null){
+                ballsCount = new HashMap<>();
+                if(delivery.getNoballRuns()==0 && delivery.getWideRuns()==0){
+                    ballsCount.put(batsman,ballsCount.getOrDefault(batsman,0)+1);
+                }
+                seasonWiseBallCount.put(season,ballsCount);
+            }
+            else{
+                if(delivery.getNoballRuns()==0 && delivery.getWideRuns()==0){
+                    ballsCount.put(batsman,ballsCount.getOrDefault(batsman,0)+1);
+                }
+            }
+
+            Map<String, Integer> runsOfBatsman = seasonWiseRunCount.get(season);
+            if(runsOfBatsman == null){
+                runsOfBatsman = new HashMap<>();
+                runsOfBatsman.put(batsman, runsOfBatsman.getOrDefault(batsman,0)+batsmanRuns);
+                seasonWiseRunCount.put(season, runsOfBatsman);
+            }
+            else{
+                runsOfBatsman.put(batsman, runsOfBatsman.getOrDefault(batsman,0)+batsmanRuns);
+            }
+
+        }
+        for(int season : seasonWiseRunCount.keySet()){
+            Map<String, Integer> yearRuns = seasonWiseRunCount.get(season);
+            Map<String, Integer> yearBalls = seasonWiseBallCount.get(season);
+
+            Map<String, Double> yearStrikeRate = new HashMap<>();
+
+            for(String player : yearRuns.keySet()){
+                int runs = yearRuns.get(player);
+                int balls = yearBalls.get(player);
+                if (balls > 0) {
+                    double strikeRate = (double) runs / balls * 100;
+                    yearStrikeRate.put(player, strikeRate);
+                } else {
+                    yearStrikeRate.put(player, 0.0);
+                }
+            }
+            strikeRateOfBatsmanForEachSeason.put(season, yearStrikeRate);
+
+        }
+        System.out.println(strikeRateOfBatsmanForEachSeason);
+    }
+
+    // Find the highest number of times one player has been dismissed by another player
+    public void getHighestNumberOfTimeOnePlayerDismissed(){
+        Map<String,String> highestNumberOfTimePlayerDismissed = new HashMap<>();
+        Map<String, Map<String,Integer>> playerDismissedCount = new HashMap<>();
+        for(Delivery delivery : deliveriesData) {
+            String playerDismissed = delivery.getPlayerDismissed();
+            if (!playerDismissed.isEmpty()) {
+                String bowler = delivery.getBowler();
+
+                Map<String, Integer> playerDis = playerDismissedCount.get(playerDismissed);
+                if (playerDis == null) {
+                    playerDis = new HashMap<>();
+                    playerDis.put(bowler, playerDis.getOrDefault(bowler, 0) + 1);
+                    playerDismissedCount.put(playerDismissed, playerDis);
+                } else {
+                    playerDis.put(bowler, playerDis.getOrDefault(bowler, 0) + 1);
+                }
+            }
+        }
+        for(Map.Entry<String, Map<String, Integer>> mapEntry : playerDismissedCount.entrySet()){
+            String player = mapEntry.getKey();
+            List<Map.Entry<String,Integer>> sortedList = new ArrayList<>(mapEntry.getValue().entrySet());
+
+            sortedList.sort((o1,o2)-> o2.getValue().compareTo(o1.getValue()));
+            String bowler = sortedList.getFirst().getKey();
+
+            highestNumberOfTimePlayerDismissed.put(player,bowler);
+        }
+        System.out.println(highestNumberOfTimePlayerDismissed);
+    }
+
+    // Find the bowler with the best economy in super overs
+    public void getBowlerBestEconomyInSuperOvers(){
+        Map<String, Double> bowlerBestEconomyInSuperOver = new HashMap<>();
+        Map<String, Integer> bowlerBalls = new HashMap<>();
+        Map<String, Integer> bowlerRuns = new HashMap<>();
+        for(Delivery delivery : deliveriesData){
+            int isSuperOver = delivery.getIsSuperOver();
+            if(isSuperOver == 1){
+                String bowler = delivery.getBowler();
+                int balls = delivery.getBall();
+                int totalRuns = delivery.getTotalRuns();
+
+                if(balls <= 6){
+                    bowlerBalls.put(bowler, bowlerBalls.getOrDefault(bowler,0)+1);
+                }
+                bowlerRuns.put(bowler,bowlerRuns.getOrDefault(bowler,0)+totalRuns);
+            }
+        }
+
+        for(String bowler : bowlerBalls.keySet()){
+            int runs = bowlerRuns.get(bowler);
+            int balls = bowlerBalls.get(bowler);
+            double economy = (runs * 6.0)/balls;
+            bowlerBestEconomyInSuperOver.put(bowler,economy);
+        }
+        System.out.println(bowlerBestEconomyInSuperOver);
+    }
+
+// Most sixes hit by batsmen
+    public void getMostSixesHitByBatsmen(){
+        Map<String, Integer> mostSixesHitByBatsmen = new HashMap<>();
+        for(Delivery delivery : deliveriesData){
+            int batsmanScore = delivery.getBatsmanRuns();
+            if(batsmanScore == 6){
+                String batsman = delivery.getBatsman();
+                mostSixesHitByBatsmen.put(batsman,mostSixesHitByBatsmen.getOrDefault(batsman,0)+1);
+            }
+        }
+        List<Map.Entry<String, Integer>> sortedList = new ArrayList<>(mostSixesHitByBatsmen.entrySet());
+        sortedList.sort((e1,e2) -> e2.getValue().compareTo(e1.getValue()));
+        System.out.println(sortedList);
+    }
+
+    // Most fours hit by batsmen
+    public void getMostFoursHitByBatsmen(){
+        Map<String, Integer> mostFourHitsByBatsmen = new HashMap<>();
+        for(Delivery delivery : deliveriesData){
+            int batsmenScore = delivery.getBatsmanRuns();
+            if(batsmenScore == 4){
+                String batsman = delivery.getBatsman();
+                mostFourHitsByBatsmen.put(batsman,mostFourHitsByBatsmen.getOrDefault(batsman,0)+1);
+            }
+        }
+        List<Map.Entry<String, Integer>> sortedList = new ArrayList<>(mostFourHitsByBatsmen.entrySet());
+        sortedList.sort((e1,e2) -> e2.getValue().compareTo(e1.getValue()));
+        System.out.println(sortedList);
+    }
+
+    // Batsmen with most centuries (100+ runs in match)
+    public void getBatsmenMostCenturies(){
+        Map<String, Integer> batsmenMostCenturies = new HashMap<>();
+        Map<Integer, Map<String, Integer>> matchWiseScores = new HashMap<>();
+
+        for(Delivery delivery : deliveriesData){
+            int matchId = delivery.getMatchId();
+            String batsman = delivery.getBatsman();
+            int batsmanRuns = delivery.getBatsmanRuns();
+
+            Map<String, Integer> scores = matchWiseScores.get(matchId);
+            if(scores == null){
+                scores = new HashMap<>();
+                scores.put(batsman, scores.getOrDefault(batsman,0)+batsmanRuns);
+                matchWiseScores.put(matchId, scores);
+            }
+            else{
+                scores.put(batsman, scores.getOrDefault(batsman,0)+batsmanRuns);
+            }
+        }
+
+        for(Integer matchId : matchWiseScores.keySet()){
+            Map<String, Integer> batsmenScore = matchWiseScores.get(matchId);
+            for(Map.Entry<String, Integer> mapEntry : batsmenScore.entrySet()){
+                if(mapEntry.getValue() >= 100){
+                    String batsman = mapEntry.getKey();
+                    batsmenMostCenturies.put(batsman, batsmenMostCenturies.getOrDefault(batsman,0)+1);
+                }
+            }
+        }
+
+        List<Map.Entry<String, Integer>> sortedList = new ArrayList<>(batsmenMostCenturies.entrySet());
+        sortedList.sort((e1,e2)-> e2.getValue().compareTo(e1.getValue()));
+        System.out.println(sortedList);
+    }
+    
+    // Batsmen with most half-centuries (50+ runs in match)
+    public void getMostHalfCenturiesOfBatsmen(){
+        Map<String, Integer> mostHalfCenturiesOfBatsman = new HashMap<>();
+        Map<Integer, Map<String, Integer>> matchWiseBatsmenScore = new HashMap<>();
+        for(Delivery delivery : deliveriesData){
+            int matchId = delivery.getMatchId();
+            String batsman = delivery.getBatsman();
+            int score = delivery.getBatsmanRuns();
+
+            Map<String, Integer> batsmenScores = matchWiseBatsmenScore.get(matchId);
+            if(batsmenScores == null){
+                batsmenScores = new HashMap<>();
+                batsmenScores.put(batsman, batsmenScores.getOrDefault(batsman,0)+ score);
+                matchWiseBatsmenScore.put(matchId,batsmenScores);
+            }
+            else{
+                batsmenScores.put(batsman,batsmenScores.getOrDefault(batsman,0)+ score);
+            }
+        }
+        for(Integer matchId : matchWiseBatsmenScore.keySet()){
+            Map<String, Integer> batsmenScores = matchWiseBatsmenScore.get(matchId);
+            for(Map.Entry<String, Integer> mapEntry : batsmenScores.entrySet()){
+                String batsman = mapEntry.getKey();
+                int score = mapEntry.getValue();
+                if(score >= 50){
+                    mostHalfCenturiesOfBatsman.put(batsman,mostHalfCenturiesOfBatsman.getOrDefault(batsman,0)+1);
+                }
+            }
+        }
+
+        List<Map.Entry<String, Integer>> sortedList = new ArrayList<>(mostHalfCenturiesOfBatsman.entrySet());
+        sortedList.sort((e1,e2)-> e2.getValue().compareTo(e1.getValue()));
+        System.out.println(sortedList);
+    }
+
+    // Most dot balls faced by batsmen
+    public void getMostDotBallsFacedByBatsmen(){
+        Map<String, Integer> mostDotBallsByBatsmen = new HashMap<>();
+        for(Delivery delivery : deliveriesData){
+            if(delivery.getBatsmanRuns()==0 && delivery.getWideRuns()==0 && delivery.getNoballRuns()==0 && delivery.getByeRuns()==0 && delivery.getLegbyRuns()==0){
+                mostDotBallsByBatsmen.put(delivery.getBatsman(),
+                        mostDotBallsByBatsmen.getOrDefault(delivery.getBatsman(),0)+1);
+            }
+        }
+        List<Map.Entry<String, Integer>> entryList = new ArrayList<>(mostDotBallsByBatsmen.entrySet());
+        entryList.sort((e1,e2) -> e2.getValue().compareTo(e1.getValue()));
+        System.out.println(entryList);
+    }
+
+    // Highest team totals in IPL history
+    public void getHighestTeamTotal(){
+        Map<String, Integer> highestTeamTotal= new HashMap<>();
+        Map<Integer, Map<String, Integer>> matchWiseTeamTotal = new HashMap<>();
+        for(Delivery delivery : deliveriesData){
+            int matchId = delivery.getMatchId();
+            String battingTeam = delivery.getBattingTeam();
+            int totalRuns = delivery.getTotalRuns();
+
+            Map<String, Integer> teamTotal = matchWiseTeamTotal.get(matchId);
+            if(teamTotal == null){
+                teamTotal = new HashMap<>();
+                teamTotal.put(battingTeam,teamTotal.getOrDefault(battingTeam,0)+totalRuns);
+                matchWiseTeamTotal.put(matchId,teamTotal);
+            }
+            else{
+                teamTotal.put(battingTeam, teamTotal.getOrDefault(battingTeam,0)+totalRuns);
+            }
+        }
+        for(Integer matchId : matchWiseTeamTotal.keySet()){
+            Map<String, Integer> teamTotal = matchWiseTeamTotal.get(matchId);
+            for(Map.Entry<String, Integer> mapEntry : teamTotal.entrySet()){
+                String teamName = mapEntry.getKey();
+                int teamScore = mapEntry.getValue();
+                highestTeamTotal.put(teamName, Math.max(highestTeamTotal.getOrDefault(teamName,0),teamScore));
+            }
+        }
+        List<Map.Entry<String, Integer>> entryList = new ArrayList<>(highestTeamTotal.entrySet());
+        entryList.sort((e1,e2)-> e2.getValue().compareTo(e1.getValue()));
+        System.out.println(entryList);
+    }
